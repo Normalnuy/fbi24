@@ -5,17 +5,17 @@ script_author("Joe Davidson")
 script_version("0.1.0")
 script_description('Multifunctional FBI helper for Arizona Wednesday')
 
--- РћСЃРЅРѕРІРЅС‹Рµ РїРѕРґРєР»СЋС‡РµРЅРёСЏ
+-- Основные подключения
 require 'lib.moonloader'
 require 'lib.sampfuncs'
 local sampev = require 'lib.samp.events'
 
--- РљРѕРґРёСЂРѕРІРєР°
+-- Кодировка
 local encoding = require 'encoding'
 encoding.default = 'CP1251'
 u8 = encoding.UTF8
 
---============================================== Р§Р°С‚ =======================================--
+--============================================== Чат =======================================--
 
 local blue_color = "{5A90CE}"
 local white_color = "{FFFFFF}"
@@ -24,7 +24,7 @@ local green_color = "{66FF4D}"
 
 local tag = blue_color.."[ FBI Helper | "..red_color.."Joe Davidson "..blue_color.."]: "..white_color
 
---=================================== РџРµСЂРµРјРµРЅРЅС‹Рµ РґР»СЏ СЃРєСЂРёРїС‚РѕРІ ===============================================--
+--=================================== Переменные для скриптов ===============================================--
 
 local updateScript = {
     json_url = 'https://raw.githubusercontent.com/Normalnuy/fbi24/refs/heads/main/update.json',
@@ -46,61 +46,61 @@ local org_checker = {
     phone = false,
     find_organizations = {},
     all_organizations = {
-        {name = "РўР Р‘",            index = 32,       color = 'CFAF46'},
+        {name = "ТРБ",            index = 32,       color = 'CFAF46'},
         {name = "LSPD",           index = 1,        color = '0049FF'},
         {name = "RCSD",           index = 2,        color = '0049FF'},
         {name = "SFPD",           index = 3,        color = '004EFF'},
         {name = "LSMC",           index = 4,        color = 'FF7E7E'},
         {name = "LVMC",           index = 5,        color = 'FF7E7E'},
-        {name = "РџСЂР°-РІРѕ",         index = 6,        color = 'CCFF00'},
-        {name = "РўРЎР ",            index = 7,        color = 'BDBDBD'},
+        {name = "Пра-во",         index = 6,        color = 'CCFF00'},
+        {name = "ТСР",            index = 7,        color = 'BDBDBD'},
         {name = "SFMC",           index = 8,        color = 'FF7E7E'},
-        {name = "Р›РёС†РµРЅР·РµСЂС‹",      index = 9,        color = 'FF6633'},
-        {name = "РЎРњР Р›РЎ",         index = 10,       color = 'FF8000'},
-        {name = "РђСЂРјРёСЏ Р›РЎ",       index = 11,       color = '996633'},
+        {name = "Лицензеры",      index = 9,        color = 'FF6633'},
+        {name = "СМИ ЛС",         index = 10,       color = 'FF8000'},
+        {name = "Армия ЛС",       index = 11,       color = '996633'},
         {name = "LVMPD",          index = 12,       color = '0049FF'},
-        {name = "РЎРњР Р›Р’",         index = 13,       color = 'FF8000'},
-        {name = "РЎРњР РЎР¤",         index = 14,       color = 'FF8000'},
-        {name = "РђСЂРјРёСЏ РЎР¤",       index = 15,       color = '996633'},
-        {name = "Р“СЂСѓРІ",           index = 16,       color = '009327'},
-        {name = "Р’Р°РіРѕСЃ",          index = 17,       color = 'D1DB1C'},
-        {name = "Р‘Р°Р»Р»Р°СЃ",         index = 18,       color = 'CC00CC'},
-        {name = "РђС†С‚РµРє",          index = 19,       color = '00FFE2'},
-        {name = "Р РёС„Р°",           index = 20,       color = '6666FF'},
-        {name = "Р Рњ",             index = 21,       color = '336699'},
-        {name = "РЇРєСѓРґР·Р°",         index = 22,       color = '960202'},
-        {name = "Р›РљРќ",            index = 23,       color = '993366'},
-        {name = "Р’Р°СЂР»РѕРє",         index = 24,       color = 'BA541D'},
-        {name = "РќРѕС‡РЅС‹Рµ РІРѕР»РєРё",   index = 25,       color = 'A87878'},
-        {name = "РЎРўРљ",            index = 31,       color = '084F6B'},
+        {name = "СМИ ЛВ",         index = 13,       color = 'FF8000'},
+        {name = "СМИ СФ",         index = 14,       color = 'FF8000'},
+        {name = "Армия СФ",       index = 15,       color = '996633'},
+        {name = "Грув",           index = 16,       color = '009327'},
+        {name = "Вагос",          index = 17,       color = 'D1DB1C'},
+        {name = "Баллас",         index = 18,       color = 'CC00CC'},
+        {name = "Ацтек",          index = 19,       color = '00FFE2'},
+        {name = "Рифа",           index = 20,       color = '6666FF'},
+        {name = "РМ",             index = 21,       color = '336699'},
+        {name = "Якудза",         index = 22,       color = '960202'},
+        {name = "ЛКН",            index = 23,       color = '993366'},
+        {name = "Варлок",         index = 24,       color = 'BA541D'},
+        {name = "Ночные волки",   index = 25,       color = 'A87878'},
+        {name = "СТК",            index = 31,       color = '084F6B'},
         {name = "Jefferson MC",   index = 33,       color = 'FF7E7E'},
-        {name = "РџРѕР¶Р°СЂРЅС‹Р№ РґРµРї.",  index = 34,       color = 'FF4500'},
+        {name = "Пожарный деп.",  index = 34,       color = 'FF4500'},
     },
     rangs_number = {
-        {name = 'LSPD',             rangs = {'РљР°РґРµС‚ РџРѕР»РёС†РёРё', 'РћС„РёС†РµСЂ РџРѕР»РёС†РёРё I', 'РћС„РёС†РµСЂ РџРѕР»РёС†РёРё II', 'РћС„РёС†РµСЂ РџРѕР»РёС†РёРё II', 'РћС„РёС†РµСЂ РџРѕР»РёС†РёРё III', 'РЎРµСЂР¶Р°РЅС‚', 'Р›РµР№С‚РµРЅР°РЅС‚', 'РљР°РїРёС‚Р°РЅ', 'РљРѕРјР°РЅРґРёСЂ', 'Р—Р°РјРµСЃС‚РёС‚РµР»СЊ РЁРµС„Р° Р”РµРїР°СЂС‚Р°РјРµРЅС‚Р°', 'РЁРµС„ Р”РµРїР°СЂС‚Р°РјРµРЅС‚Р°'}},
-        {name = 'RCSD',             rangs = {'РљР°РґРµС‚ РЁРµСЂРёС„Р°', 'РњР»Р°РґС€РёР№ РџР°С‚СЂСѓР»СЊРЅС‹Р№ РЁРµСЂРёС„', 'РџР°С‚СЂСѓР»СЊРЅС‹Р№ РЁРµСЂРёС„', 'РЎС‚Р°СЂС€РёР№ РџР°С‚СЂСѓР»СЊРЅС‹Р№ РЁРµСЂРёС„', 'РЎРµСЂР¶Р°РЅС‚', 'Р›РµР№С‚РµРЅР°РЅС‚', 'РљР°РїРёС‚Р°РЅ', 'РљРѕРјР°РЅРґРѕСЂ', 'Р—Р°РјРµСЃС‚РёС‚РµР»СЊ РЁРµСЂРёС„Р° Р”РµРїР°СЂС‚Р°РјРµРЅС‚Р°', 'РЁРµСЂРёС„ Р”РµРїР°СЂС‚Р°РјРµРЅС‚Р°'}},
-        {name = 'SFPD',             rangs = {'РљСѓСЂСЃР°РЅС‚ SWAT','РђРєР°РґРµРјРёРє SWAT', 'РЎС‚Р°Р¶С‘СЂ SWAT', 'РЎС‚Р°СЂС€РёР№ РєСѓСЂСЃР°РЅС‚ SWAT', 'РђРєР°РґРµРјРёРє SWAT', 'РћРїРµСЂР°С‚РёРІРЅРёРє SWAT', 'Р›РµР№С‚РµРЅР°РЅС‚ SWAT', 'РРЅСЃС‚СЂСѓРєС‚РѕСЂ SWAT', 'Р—Р°РјРµСЃС‚РёС‚РµР»СЊ РґРёСЂРµРєС‚РѕСЂР° SWAT', 'Р”РёСЂРµРєС‚РѕСЂ SWAT'}},
-        {name = 'LVMPD',            rangs = {'РљР°РґРµС‚ РЁРµСЂРёС„ I','РџРѕРјРѕС‰РЅРёРє РЁРµСЂРёС„Р° II', 'РџРѕРјРѕС‰РЅРёРє РЁРµСЂРёС„Р° III', 'РџРѕРјРѕС‰РЅРёРє РЁРµСЂРёС„Р° IV', 'РЎРµСЂР¶Р°РЅС‚', 'Р›РµР№С‚РµРЅР°РЅС‚', 'РљР°РїРёС‚Р°РЅ', 'РљРѕРјР°РЅРґРѕСЂ', 'Р—Р°РјРµСЃС‚РёС‚РµР»СЊ РЁРµСЂРёС„Р° Р”РµРїР°СЂС‚Р°РјРµРЅС‚Р°', 'РЁРµСЂРёС„ Р”РµРїР°СЂС‚Р°РјРµРЅС‚Р°'}},
-        {name = 'LSMC',             rangs = {'РЎР°РЅРёС‚Р°СЂ', 'Р¤РµР»СЊРґС€РµСЂ', 'РўСЂР°РІРјРѕС‚РѕР»РѕРі', 'РЈС‡Р°СЃС‚РєРѕРІС‹Р№ РІСЂР°С‡', 'РўРµСЂР°РїРµРІС‚', 'РџРµРґРёР°С‚СЂ', 'РҐРёСЂСѓСЂРі', 'Р—Р°РІРµРґСѓСЋС‰РёР№ РћС‚РґРµР»РµРЅРёРµРј', 'Р—Р°Рј.Р“Р»Р°РІ.Р’СЂР°С‡Р°', 'Р“Р»Р°РІ.Р’СЂР°С‡'}},
-        {name = 'LVMC',             rangs = {'РРЅС‚РµСЂРЅ', 'РЈС‡Р°СЃС‚РєРѕРІС‹Р№ Р’СЂР°С‡', 'РўРµСЂР°РїРµРІС‚', 'РќР°СЂРєРѕР»РѕРі', 'РћРєСѓР»РёСЃС‚', 'РҐРёСЂСѓСЂРі', 'РџСЃРёС…РѕР»РѕРі', 'Р—Р°РІРµРґСѓСЋС‰РёР№ РћС‚РґРµР»РµРЅРёРµРј', 'Р—Р°Рј.Р“Р»Р°РІ.Р’СЂР°С‡Р°', 'Р“Р»Р°РІ.Р’СЂР°С‡'}},
-        {name = 'РџРѕР¶Р°СЂРЅС‹Р№ РґРµРї.',    rangs = {'РЎС‚Р°Р¶РµСЂ', 'РџРѕР¶Р°СЂРЅС‹Р№', 'РЎС‚Р°СЂС€РёР№ РџРѕР¶Р°СЂРЅС‹Р№', 'Р›РµР№С‚РµРЅР°РЅС‚', 'РЎСѓРїРµСЂРІР°Р№Р·РµСЂ', 'РљР°РїРёС‚Р°РЅ', 'Р—Р°Рј. РєРѕРјР°РЅРґРёСЂР°', 'РљРѕРјР°РЅРґРёСЂ', 'Р—Р°Рј. РЁРµС„Р° Р”РµРїР°СЂС‚Р°РјРµРЅС‚Р°', 'РЁРµС„ РџРѕР¶Р°СЂРЅРѕРіРѕ Р”РµРїР°СЂС‚Р°РјРµРЅС‚Р°'}},
-        {name = 'РџСЂР°-РІРѕ',           rangs = {'РЎС‚Р°Р¶РµСЂ Р®СЂРёСЃС‚', 'Р®СЂРёСЃС‚', 'РЎС‚Р°Р¶РµСЂ РђРґРІРѕРєР°С‚', 'Р“РѕСЃСѓРґР°СЂСЃС‚РІРµРЅРЅС‹Р№ РђРґРІРѕРєР°С‚', 'РЎРїРµС†РёР°Р»РёСЃС‚ -', 'РќР°Р»РѕРіРѕРІС‹Р№', 'СЃРµРєСЂРµС‚', 'Р“РѕСЃСѓРґР°СЂСЃС‚РІРµРЅРЅС‹Р№ СЃРѕРІРµС‚РЅРёРє', 'Р’РёС†Рµ-РіСѓР±РµСЂРЅР°С‚РѕСЂ', 'Р“СѓР±РµСЂРЅР°С‚РѕСЂ С€С‚Р°С‚Р°'}},
-        {name = "РўРЎР ",              rangs = {'РћС…СЂР°РЅРЅРёРє', 'РќР°РґР·РёСЂР°С‚РµР»СЊ', 'РЎС‚Р°СЂС€РёР№ РЅР°РґР·РёСЂР°С‚РµР»СЊ', 'Р”РµР¶СѓСЂРЅС‹Р№', 'РРЅСЃРїРµРєС‚РѕСЂ', 'РќР°С‡Р°Р»СЊРЅРёРє РёРЅСЃРїРµРєС†РёРё', 'Р—Р°РјРµСЃС‚РёС‚РµР»СЊ РЅР°С‡. Р±Р»РѕРєР°', 'РќР°С‡Р°Р»СЊРЅРёРє Р±Р»РѕРєР°', 'Р—Р°Рј. РЅР°С‡Р°Р»СЊРЅРёРєР° С‚СЋСЂСЊРјС‹', 'РќР°С‡Р°Р»СЊРЅРёРє С‚СЋСЂСЊРјС‹'}},
-        {name = "Р›РёС†РµРЅР·РµСЂС‹",        rangs = {'РџСЂР°РєС‚РёРєР°РЅС‚', 'РљРѕРЅСЃСѓР»СЊС‚Р°РЅС‚', 'РРЅСЃС‚СЂСѓРєС‚РѕСЂ I РєР°С‚РµРіРѕСЂРёРё', 'РРЅСЃС‚СЂСѓРєС‚РѕСЂ II РєР°С‚РµРіРѕСЂРёРё', 'РРЅСЃС‚СЂСѓРєС‚РѕСЂ III РєР°С‚РµРіРѕСЂРёРё', 'РђСЃСЃРёСЃС‚РµРЅС‚ РјРµРЅРµРґР¶РµСЂР°', 'РњРµРЅРµРґР¶РµСЂ', 'РљСѓСЂР°С‚РѕСЂ РћС‚РґРµР»Р°', 'Р—Р°Рј.Р”РёСЂРµРєС‚РѕСЂР°', 'Р”РёСЂРµРєС‚РѕСЂ'}},
-        {name = 'РЎРњР Р›РЎ',           rangs = {'РЎС‚Р°Р¶С‘СЂ', 'РљРѕСЂСЂРµСЃРїРѕРЅРґРµРЅС‚', 'Р РµРґР°РєС‚РѕСЂ', 'Р–СѓСЂРЅР°Р»РёСЃС‚', 'РђСЂС‚-Р–СѓСЂРЅР°Р»РёСЃС‚', 'Р РµРїРѕСЂС‚С‘СЂ', 'Р’РµР±-Р”РёР·Р°Р№РЅРµСЂ', 'SMM-РјРµРЅРµРґР¶РµСЂ', 'Р—Р°Рј. Р”РёСЂРµРєС‚РѕСЂР°', 'Р”РёСЂРµРєС‚РѕСЂ'}},
-        {name = 'РђСЂРјРёСЏ Р›РЎ',         rangs = {'Р СЏРґРѕРІРѕР№', 'РљР°РїСЂР°Р»', 'РЎРµСЂР¶Р°РЅС‚', 'РњР°СЃС‚РµСЂ-СЃРµСЂР¶Р°РЅС‚', 'Р›РµР№С‚РµРЅР°РЅС‚', 'РљР°РїРёС‚Р°РЅ', 'РњР°Р№РѕСЂ', 'РџРѕРґРїРѕР»РєРѕРІРЅРёРє', 'РџРѕР»РєРѕРІРЅРёРє', 'Р“РµРЅРµСЂР°Р»'}},
-        {name = 'РђСЂРјРёСЏ РЎР¤',         rangs = {'РњР°С‚СЂРѕСЃ', 'РЎС‚Р°СЂС€РёР№ РјР°С‚СЂРѕСЃ', 'РњРёС‡РјР°РЅ', 'РЎС‚Р°СЂС€РёР№ РјРёС‡РјР°РЅ', 'Р›РµР№С‚РµРЅР°РЅС‚', 'РљР°РїРёС‚Р°РЅ-Р»РµР№С‚РµРЅР°РЅС‚', 'РљР°РїРёС‚Р°РЅ 1-РѕРіРѕ СЂР°РЅРіР°', 'РљРѕРЅС‚СЂ-Р°РґРјРёСЂР°Р»', 'Р’РёС†Рµ-Р°РґРјРёСЂР°Р»', 'РђРґРјРёСЂР°Р»'}},
+        {name = 'LSPD',             rangs = {'Кадет Полиции', 'Офицер Полиции I', 'Офицер Полиции II', 'Офицер Полиции II', 'Офицер Полиции III', 'Сержант', 'Лейтенант', 'Капитан', 'Командир', 'Заместитель Шефа Департамента', 'Шеф Департамента'}},
+        {name = 'RCSD',             rangs = {'Кадет Шерифа', 'Младший Патрульный Шериф', 'Патрульный Шериф', 'Старший Патрульный Шериф', 'Сержант', 'Лейтенант', 'Капитан', 'Командор', 'Заместитель Шерифа Департамента', 'Шериф Департамента'}},
+        {name = 'SFPD',             rangs = {'Курсант SWAT','Академик SWAT', 'Стажёр SWAT', 'Старший курсант SWAT', 'Академик SWAT', 'Оперативник SWAT', 'Лейтенант SWAT', 'Инструктор SWAT', 'Заместитель директора SWAT', 'Директор SWAT'}},
+        {name = 'LVMPD',            rangs = {'Кадет Шериф I','Помощник Шерифа II', 'Помощник Шерифа III', 'Помощник Шерифа IV', 'Сержант', 'Лейтенант', 'Капитан', 'Командор', 'Заместитель Шерифа Департамента', 'Шериф Департамента'}},
+        {name = 'LSMC',             rangs = {'Санитар', 'Фельдшер', 'Травмотолог', 'Участковый врач', 'Терапевт', 'Педиатр', 'Хирург', 'Заведующий Отделением', 'Зам.Глав.Врача', 'Глав.Врач'}},
+        {name = 'LVMC',             rangs = {'Интерн', 'Участковый Врач', 'Терапевт', 'Нарколог', 'Окулист', 'Хирург', 'Психолог', 'Заведующий Отделением', 'Зам.Глав.Врача', 'Глав.Врач'}},
+        {name = 'Пожарный деп.',    rangs = {'Стажер', 'Пожарный', 'Старший Пожарный', 'Лейтенант', 'Супервайзер', 'Капитан', 'Зам. командира', 'Командир', 'Зам. Шефа Департамента', 'Шеф Пожарного Департамента'}},
+        {name = 'Пра-во',           rangs = {'Стажер Юрист', 'Юрист', 'Стажер Адвокат', 'Государственный Адвокат', 'Специалист -', 'Налоговый', 'секрет', 'Государственный советник', 'Вице-губернатор', 'Губернатор штата'}},
+        {name = "ТСР",              rangs = {'Охранник', 'Надзиратель', 'Старший надзиратель', 'Дежурный', 'Инспектор', 'Начальник инспекции', 'Заместитель нач. блока', 'Начальник блока', 'Зам. начальника тюрьмы', 'Начальник тюрьмы'}},
+        {name = "Лицензеры",        rangs = {'Практикант', 'Консультант', 'Инструктор I категории', 'Инструктор II категории', 'Инструктор III категории', 'Ассистент менеджера', 'Менеджер', 'Куратор Отдела', 'Зам.Директора', 'Директор'}},
+        {name = 'СМИ ЛС',           rangs = {'Стажёр', 'Корреспондент', 'Редактор', 'Журналист', 'Арт-Журналист', 'Репортёр', 'Веб-Дизайнер', 'SMM-менеджер', 'Зам. Директора', 'Директор'}},
+        {name = 'Армия ЛС',         rangs = {'Рядовой', 'Капрал', 'Сержант', 'Мастер-сержант', 'Лейтенант', 'Капитан', 'Майор', 'Подполковник', 'Полковник', 'Генерал'}},
+        {name = 'Армия СФ',         rangs = {'Матрос', 'Старший матрос', 'Мичман', 'Старший мичман', 'Лейтенант', 'Капитан-лейтенант', 'Капитан 1-ого ранга', 'Контр-адмирал', 'Вице-адмирал', 'Адмирал'}},
     }
 }
 
---=================================== РџР РћР“Р РђРњРњРђ =============================================================--
+--=================================== ПРОГРАММА =============================================================--
 
 function main()
     checkSampLoaded()
     autoupdate(updateScript.json_url)
 
     sampRegisterChatCommands()
-    sampAddChatMessage(tag.."РЎРєСЂРёРїС‚ Р·Р°РїСѓС‰РµРЅ!",-1)
+    sampAddChatMessage(tag.."Скрипт запущен!",-1)
 
     while true do wait(0)
         afindUpdate()      -- autofind
@@ -108,7 +108,7 @@ function main()
     end
 end
 
---===================================== Р¤СѓРЅРєС†РёРё Р±РµСЃРєРѕРЅРµС‡РЅРѕРіРѕ С†РёРєР»Р° ==========================================--
+--===================================== Функции бесконечного цикла ==========================================--
 
 function afindUpdate()
     if autofind.process then
@@ -124,7 +124,7 @@ function findUpdate()
     end
 end
 
---===================================== Р—Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°РЅРЅС‹Рµ РєРѕРјР°РЅРґС‹ ==========================================--
+--===================================== Зарегистрированные команды ==========================================--
 
 function cmd_afind(arg)
     local id = arg:match('(.+)')
@@ -132,20 +132,20 @@ function cmd_afind(arg)
     if id then nick = checkPlayerOnline(id) end
 
     if (not id and autofind.process) or (id == autofind.playerId and autofind.process) then 
-        sampAddChatMessage(tag.."РЎР»РµР¶РєР° Р·Р° РёРіСЂРѕРєРѕРј "..autofind.playerNick.."["..autofind.playerId.."] "..red_color.."РѕСЃС‚Р°РЅРѕРІР»РµРЅР°",-1)
+        sampAddChatMessage(tag.."Слежка за игроком "..autofind.playerNick.."["..autofind.playerId.."] "..red_color.."остановлена",-1)
         afindDefaultParams()
         return 
     end
 
 
-    if     not id   then    sampAddChatMessage(tag.."Р’С‹ РЅРµ СѓРєР°Р·Р°Р»Рё ID!",-1); return
-    elseif not nick then    sampAddChatMessage(tag..'РРіСЂРѕРє СЃ ID: \"'..id..'\" РЅРµ РІ СЃРµС‚Рё!',-1); return
+    if     not id   then    sampAddChatMessage(tag.."Вы не указали ID!",-1); return
+    elseif not nick then    sampAddChatMessage(tag..'Игрок с ID: \"'..id..'\" не в сети!',-1); return
     elseif id ~= autofind.playerId and autofind.process then autofind.inta = false end
 
     autofind.playerId = id
     autofind.playerNick = nick
     autofind.process = true
-    sampAddChatMessage(tag.."РЎР»РµР¶РєР° Р·Р° РёРіСЂРѕРєРѕРј "..autofind.playerNick.."["..autofind.playerId.."] "..green_color.."РЅР°С‡Р°С‚Р°",-1)
+    sampAddChatMessage(tag.."Слежка за игроком "..autofind.playerNick.."["..autofind.playerId.."] "..green_color.."начата",-1)
 end
 
 function cmd_org(arg)
@@ -155,15 +155,15 @@ function cmd_org(arg)
     id = arg:match('(.+)')
     if id then nick = checkPlayerOnline(id) end
 
-    if not id then          sampAddChatMessage(tag.."Р’С‹ РЅРµ СѓРєР°Р·Р°Р»Рё ID!",-1)
-    elseif not nick then    sampAddChatMessage(tag.."РРіСЂРѕРє СЃ ID: "..id.." РЅРµ РІ СЃРµС‚Рё!",-1)
+    if not id then          sampAddChatMessage(tag.."Вы не указали ID!",-1)
+    elseif not nick then    sampAddChatMessage(tag.."Игрок с ID: "..id.." не в сети!",-1)
     else
         org_checker.playerId = id
         org_checker.playerNick = nick
         org_checker.color = getColor(id)
 
-        sampAddChatMessage(tag.."РќР°С‡Р°Р»СЃСЏ РїРѕРёСЃРє РёРіСЂРѕРєР° "..blue_color..org_checker.playerNick.."["..org_checker.playerId.."]"..white_color..", СЌС‚Рѕ Р·Р°Р№РјС‘С‚ РЅРµРєРѕС‚РѕСЂРѕРµ РІСЂРµРјСЏ.",-1)
-        sampAddChatMessage(tag.."РќРµ Р·Р°РєСЂС‹РІР°Р№С‚Рµ С‚РµР»РµС„РѕРЅ, РїРѕРєР° РёРґС‘С‚ РїРѕРёСЃРє!",-1)
+        sampAddChatMessage(tag.."Начался поиск игрока "..blue_color..org_checker.playerNick.."["..org_checker.playerId.."]"..white_color..", это займёт некоторое время.",-1)
+        sampAddChatMessage(tag.."Не закрывайте телефон, пока идёт поиск!",-1)
         generateOrganizations()
         
         sampSendChat('/phone')
@@ -202,7 +202,7 @@ function sampRegisterChatCommands()
 end
 
 function generateOrganizations()
-    table.insert(org_checker.find_organizations, {name = "РўР Р‘", index = 32})
+    table.insert(org_checker.find_organizations, {name = "ТРБ", index = 32})
     for _, org in ipairs(org_checker.all_organizations) do
         if org.color == org_checker.color and org.color ~= 'CFAF46' then
             table.insert(org_checker.find_organizations, {name = org.name, index = org.index})
@@ -278,7 +278,7 @@ end
 
 function sampev.onShowDialog(dialogId, style, title, button1, button2, text)
     -- sampev Org Checker
-    if title:find("РћСЃРЅРѕРІРЅР°СЏ") and org_checker.process then 
+    if title:find("Основная") and org_checker.process then 
         org_checkerDefaultParams()
         sampSendDialogResponse(dialogId, 0, nil, false)
         return false
@@ -286,7 +286,7 @@ function sampev.onShowDialog(dialogId, style, title, button1, button2, text)
     
     if dialogId == 8744 and org_checker.process then
         if #org_checker.find_organizations == 0 then
-            sampAddChatMessage(tag.."РРіСЂРѕРє "..org_checker.playerNick.."["..org_checker.playerId.."] РЅРµ РЅР°Р№РґРµРЅ РІ СЃРїРёСЃРєРµ РѕСЂРіР°РЅРёР·Р°С†РёР№.",-1)
+            sampAddChatMessage(tag.."Игрок "..org_checker.playerNick.."["..org_checker.playerId.."] не найден в списке организаций.",-1)
             stopFind(dialogId)
             return false
         end
@@ -300,7 +300,7 @@ function sampev.onShowDialog(dialogId, style, title, button1, button2, text)
         end
     end
 
-    if title:find("РЎРѕС‚СЂСѓРґРЅРёРєРё РѕРЅР»Р°Р№РЅ") and org_checker.process then
+    if title:find("Сотрудники онлайн") and org_checker.process then
         local next = 25
         local players = {}
 
@@ -313,14 +313,14 @@ function sampev.onShowDialog(dialogId, style, title, button1, button2, text)
                 local rang, nick, id = string.match(player, "%[%d+%] (.+) (%w+_%w+)%((%d+)%)")
                 local rang_number = getRangNumber(rang)
                 if rang_number > 0 then rang = rang.." ["..rang_number.."]" end
-                sampAddChatMessage(tag.."РРіСЂРѕРє {"..org_checker.color.."}"..nick.."["..id.."] "..white_color.."РЅР°Р№РґРµРЅ: "..org_checker.name.." | "..rang..".",-1)
+                sampAddChatMessage(tag.."Игрок {"..org_checker.color.."}"..nick.."["..id.."] "..white_color.."найден: "..org_checker.name.." | "..rang..".",-1)
                 stopFind(dialogId)
                 return false
             end
             
-            if player:find("РџСЂРµРґС‹РґСѓС‰Р°СЏ") then next = 26 end
+            if player:find("Предыдущая") then next = 26 end
 
-            if player:find("РЎР»РµРґСѓСЋС‰Р°СЏ") then
+            if player:find("Следующая") then
                 sampSendDialogResponse(dialogId, 1, next, false)
                 return false
             end
@@ -333,26 +333,26 @@ end
 
 function sampev.onServerMessage(color, text)
     -- sampev AutoFind
-    if string.find(text, "РњРµСЃС‚РѕРїРѕР»РѕР¶РµРЅРёРµ (%w+_%w+)%[(%d+)%] РѕС‚РјРµС‡РµРЅРѕ РЅР° РєР°СЂС‚Рµ") then
+    if string.find(text, "Местоположение (%w+_%w+)%[(%d+)%] отмечено на карте") then
         local id = text:match("%[(%d+)%]")
         local nick = text:match("(%w+_%w+)")
 
         if nick ~= autofind.playerNick then
-            sampAddChatMessage(tag.."РРіСЂРѕРє "..autofind.playerNick.."["..autofind.playerId.."] РІС‹С€РµР» РёР· РёРіСЂС‹!",-1)
-            sampAddChatMessage(tag.."РЎР»РµР¶РєР° Р·Р° РёРіСЂРѕРєРѕРј "..autofind.playerNick.."["..autofind.playerId.."] "..red_color.."РѕСЃС‚Р°РЅРѕРІР»РµРЅР°",-1)
+            sampAddChatMessage(tag.."Игрок "..autofind.playerNick.."["..autofind.playerId.."] вышел из игры!",-1)
+            sampAddChatMessage(tag.."Слежка за игроком "..autofind.playerNick.."["..autofind.playerId.."] "..red_color.."остановлена",-1)
             afindDefaultParams()
         end
 
         if autofind.inta then
-            sampAddChatMessage(tag.."РРіСЂРѕРє "..autofind.playerNick.."["..autofind.playerId.."] РІС‹С€РµР» РёР· РёРЅС‚РµСЂСЊРµСЂР°!",-1)
+            sampAddChatMessage(tag.."Игрок "..autofind.playerNick.."["..autofind.playerId.."] вышел из интерьера!",-1)
             autofind.inta = false
         end
         return false
     end
 
-    if string.find(text, "РРіСЂРѕРє РЅР°С…РѕРґРёС‚СЃСЏ РІ") then
+    if string.find(text, "Игрок находится в") then
         if not autofind.inta then 
-            sampAddChatMessage(tag.."РРіСЂРѕРє "..autofind.playerNick.."["..autofind.playerId.."] Р·Р°С€РµР» РІ РёРЅС‚РµСЂСЊРµСЂ!",-1)
+            sampAddChatMessage(tag.."Игрок "..autofind.playerNick.."["..autofind.playerId.."] зашел в интерьер!",-1)
             autofind.inta = true
         end
         return false
@@ -380,21 +380,21 @@ function autoupdate(json_url)
               lua_thread.create(function()
                 local dlstatus = require('moonloader').download_status
                 local color = -1
-                sampAddChatMessage((tag..'РћР±РЅР°СЂСѓР¶РµРЅРѕ РѕР±РЅРѕРІР»РµРЅРёРµ. РџС‹С‚Р°СЋСЃСЊ РѕР±РЅРѕРІРёС‚СЊСЃСЏ c '..thisScript().version..' РЅР° '..updateversion), color)
+                sampAddChatMessage((tag..'Обнаружено обновление. Пытаюсь обновиться c '..thisScript().version..' на '..updateversion), color)
                 wait(250)
                 downloadUrlToFile(updatelink, thisScript().path,
                   function(id3, status1, p13, p23)
                     if status1 == dlstatus.STATUS_DOWNLOADINGDATA then
-                      print(string.format('Р—Р°РіСЂСѓР¶РµРЅРѕ %d РёР· %d.', p13, p23))
+                      print(string.format('Загружено %d из %d.', p13, p23))
                     elseif status1 == dlstatus.STATUS_ENDDOWNLOADDATA then
-                      print('Р—Р°РіСЂСѓР·РєР° РѕР±РЅРѕРІР»РµРЅРёСЏ Р·Р°РІРµСЂС€РµРЅР°.')
-                      sampAddChatMessage((tag..'РћР±РЅРѕРІР»РµРЅРёРµ Р·Р°РІРµСЂС€РµРЅРѕ!'), color)
+                      print('Загрузка обновления завершена.')
+                      sampAddChatMessage((tag..'Обновление завершено!'), color)
                       goupdatestatus = true
                       lua_thread.create(function() wait(500) thisScript():reload() end)
                     end
                     if status1 == dlstatus.STATUSEX_ENDDOWNLOAD then
                       if goupdatestatus == nil then
-                        sampAddChatMessage((tag..'РћР±РЅРѕРІР»РµРЅРёРµ РїСЂРѕС€Р»Рѕ РЅРµСѓРґР°С‡РЅРѕ. Р—Р°РїСѓСЃРєР°СЋ СѓСЃС‚Р°СЂРµРІС€СѓСЋ РІРµСЂСЃРёСЋ..'), color)
+                        sampAddChatMessage((tag..'Обновление прошло неудачно. Запускаю устаревшую версию..'), color)
                         update = false
                       end
                     end
@@ -404,11 +404,11 @@ function autoupdate(json_url)
               )
             else
               update = false
-              print('v'..thisScript().version..': РћР±РЅРѕРІР»РµРЅРёРµ РЅРµ С‚СЂРµР±СѓРµС‚СЃСЏ.')
+              print('v'..thisScript().version..': Обновление не требуется.')
             end
           end
         else
-          print('v'..thisScript().version..': РќРµ РјРѕРіСѓ РїСЂРѕРІРµСЂРёС‚СЊ РѕР±РЅРѕРІР»РµРЅРёРµ.')
+          print('v'..thisScript().version..': Не могу проверить обновление.')
           update = false
         end
       end
