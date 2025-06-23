@@ -26,9 +26,9 @@ local tag = blue_color.."[ FBI Helper | "..red_color.."Joe Davidson "..blue_colo
 
 --=================================== Переменные для скриптов ===============================================--
 
-local updateScript = {
+local updateScritp = {
     json_url = 'https://raw.githubusercontent.com/Normalnuy/fbi24/refs/heads/main/update.json',
-    url = 'https://github.com/Normalnuy/fbi24/raw/refs/heads/main/fbi24.lua'
+    url = ''
 }
 
 local autofind = {
@@ -98,7 +98,7 @@ local org_checker = {
 
 function main()
     checkSampLoaded()
-    autoupdate(updateScript.json_url, updateScript.url)
+    autoupdate(json_url, url)
 
     sampRegisterChatCommands()
     sampAddChatMessage(tag.."Скрипт запущен!",-1)
