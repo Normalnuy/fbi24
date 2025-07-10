@@ -1526,34 +1526,33 @@ end
 --============================================= AUTO UPDATE =================================================--
 
 function autoupdate(json_url)
-  local dlstatus = require('moonloader').download_status
-  local json = getWorkingDirectory() .. '\\'..thisScript().name..'-version.json'
-  if doesFileExist(json) then os.remove(json) end
-  downloadUrlToFile(json_url, json,
-    function(id, status, p1, p2)
-      if status == dlstatus.STATUSEX_ENDDOWNLOAD then
-        if doesFileExist(json) then
-          local f = io.open(json, 'r')
-          if f then
-            updateinfo = decodeJson(f:read('*a'))
-            updatelink = updateinfo.updateurl
-            updateversion = updateinfo.latest
-            f:close()
-            os.remove(json)
-            if updateversion ~= thisScript().version then
-                buff.window.update[0] = not buff.window.update[0]
-                return
+    local dlstatus = require('moonloader').download_status
+    local json = getWorkingDirectory() .. '\\'..thisScript().name..'-version.json'
+    if doesFileExist(json) then os.remove(json) end
+    downloadUrlToFile(json_url, json,
+        function(id, status, p1, p2)
+            if status == dlstatus.STATUSEX_ENDDOWNLOAD then
+                if doesFileExist(json) then
+                    local f = io.open(json, 'r')
+                    if f then
+                        updateinfo = decodeJson(f:read('*a'))
+                        updatelink = updateinfo.updateurl
+                        updateversion = updateinfo.latest
+                        f:close()
+                        os.remove(json)
+                        if updateversion ~= thisScript().version then
+                            buff.window.update[0] = not buff.window.update[0]
+                            return
+                        else
+                            update = false
+                            print('v'..thisScript().version..': Обновление не требуется.')
+                        end
+                    end
+                end
             else
-              update = false
-              print('v'..thisScript().version..': Обновление не требуется.')
+                print('v'..thisScript().version..': Не могу проверить обновление.')
+                update = false
             end
-          end
-        else
-          print('v'..thisScript().version..': Не могу проверить обновление.')
-          update = false
-        end
-      end
-    end
-  )
-  while update ~= false do wait(100) end
+            while update ~= false do wait(100) end
+    end)
 end
