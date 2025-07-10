@@ -1246,7 +1246,7 @@ local uw = imgui.OnFrame(function() return buff.window.update[0] end, function(p
     
     imgui.Begin(u8'! ОБНОВЛЕНИЕ ! ##updates', buff.window.update, imgui.WindowFlags.NoResize + imgui.WindowFlags.NoCollapse)
         local x, y = imgui.GetWindowWidth(), imgui.GetWindowHeight()
-        local last_version = updateinfo.versions[#updateinfo.versions]
+        local last_version = updateinfo.versions[1]
 
         imgui.SetCursorPosX(x/2 - imgui.CalcTextSize(u8"Версия: "..last_version.num).x/2)
         imgui.Text(u8"Версия: "..last_version.num)
