@@ -49,6 +49,7 @@ local pre_start = true
 
 --=================================== Переменные для скриптов ===============================================--
 
+local updateinfo = {}
 
 local pathes = {
     config = {
@@ -1044,7 +1045,7 @@ local mw = imgui.OnFrame(function() return buff.window.main[0] end, function(pla
                             imgui.SameLine()
 
                             if imgui.Button(faicons('TRASH').."##"..i, imgui.ImVec2(30, 25)) then
-                                deleteDm(name, chapter.text)
+                                deleteDm(name, chapter.text, chapter.form)
                             end
                             imgui.TextHovered(u8"Для удаления записи необходимо\nскрыть остальные вкладки.")
                         end
@@ -1553,6 +1554,6 @@ function autoupdate(json_url)
                 print('v'..thisScript().version..': Не могу проверить обновление.')
                 update = false
             end
-            while update ~= false do wait(100) end
+            while update ~= false do wait(100) print(1) end
     end)
 end
