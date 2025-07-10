@@ -55,7 +55,7 @@ local pathes = {
         config_dir = 'moonloader/FBIHelperSettings/',
         settings = 'moonloader/FBIHelperSettings/settings.json',
         notepad = 'moonloader/FBIHelperSettings/notepad.txt',
-        resouces = 'moonloader/FBIHelperSettings/resources/',
+        resources = 'moonloader/FBIHelperSettings/resources/',
     },
     update = {
         json_url = 'https://raw.githubusercontent.com/Normalnuy/fbi24/refs/heads/main/update.json'
@@ -65,7 +65,7 @@ local pathes = {
 local resources = {
     images = {
         logo = {
-            path = pathes.config.resouces .. 'logo.png',
+            path = pathes.config.resources .. 'logo.png',
             url = 'https://raw.githubusercontent.com/Normalnuy/fbi24/refs/heads/main/resources/images/logo.png'
         }
     }
