@@ -1,8 +1,8 @@
----@diagnostic disable: undefined-global, need-check-nil, lowercase-global, cast-local-type, unused-local, different-requires, undefined-field, duplicate-set-field
+---@diagnostic disable: undefined-global, need-check-nil, lowercase-global, cast-local-type, unused-local, different-requires, undefined-field, duplicate-set-field, redundant-parameter
 
 script_name("FBI Helper")
 script_author("Joe Davidson")
-script_version("0.1.1")
+script_version("0.1.2")
 script_description('Multifunctional FBI helper for Arizona Wednesday')
 
 -- Основные подключения
@@ -13,6 +13,7 @@ local sampev = require 'lib.samp.events'
 -- Доп. подключения
 local imgui = require("mimgui")
 local ffi = require('ffi')
+local effil = require('effil')
 local json = require("cjson")
 local faicons = require('fAwesome6')
 local wm = require('windows.message')
@@ -164,6 +165,32 @@ local org_checker = {
     }
 }
 
+local dep = {
+    {name = "Все, кто связывался с ФБР", tag = 'None',     log = {}},
+    {name = 'Похитители',       tag = "Похитители",        log = {}},
+    {name = 'Террористы',       tag = "Террористы",       log = {}},
+    {name = 'Инфо',             tag = "Информация",        log = {}},
+    {name = 'Всем',             tag = "Всем",              log = {}},
+    {name = 'МЮ/МО/МЗ',         tag = "МЮ/МО/МЗ",          log = {}},
+    {name = 'МЮ/МО',            tag = "МЮ/МО",             log = {}},
+    {name = 'МЮ/МЗ',            tag = "МЮ/МЗ",             log = {}},
+    {name = 'LSPD',             tag = "Полиция ЛС",        log = {}},
+    {name = 'RCSD',             tag = "Областная полиция", log = {}},
+    {name = 'SFPD',             tag = "СВАТ",              log = {}},
+    {name = 'LVMPD',            tag = "Полиция ЛВ",        log = {}},
+    {name = 'LSMC',             tag = "Больница ЛС",       log = {}},
+    {name = 'LVMC',             tag = "Больница ЛВ",       log = {}},
+    {name = 'Пожарный деп.',    tag = "СФФД",              log = {}},
+    {name = 'Правительство',    tag = "Пра-во",            log = {}},
+    {name = 'Губернатор',       tag = "Губернатор",        log = {}},
+    {name = 'Суд. коллегия',    tag = "Суд",               log = {}},
+    {name = "ТСР",              tag = "Тюрьма ЛВ",         log = {}},
+    {name = "Лицензеры",        tag = "ГЦЛ",               log = {}},
+    {name = 'СМИ ЛС',           tag = "СМИ ЛС",            log = {}},
+    {name = 'Армия ЛС',         tag = "Армия ЛС",          log = {}},
+    {name = 'Армия СФ',         tag = "ВМС",               log = {}},
+}
+
 --====================================== mimgui параменты ===================================================--
 
 local sw, sh = getScreenResolution()
@@ -186,6 +213,8 @@ local buff = {
         add_dm = new.char[10000](),
         add_dm_name = new.char[10000](),
         edit_dm = new.char[10000](),
+        dep_text = new.char[10000](),
+        report_text = new.char[10000](),
     },
     int = {
         add_asu = new.int(1),
@@ -194,10 +223,12 @@ local buff = {
     combo = {
         add_asu = new.int(),
         add_dm = new.int(),
+        dep = new.int()
 
     },
     radioInt = {
         form_dm = new.int(),
+        form_report = new.int(),
     }
 }
 
@@ -675,8 +706,62 @@ function popOpen(params)
     imgui.OnFrame(function() return flag and not isPauseMenuActive() and not sampIsScoreboardOpen() end, function()
         imgui.SetNextWindowPos(imgui.ImVec2(sw / 2, sh / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
         
+        if modalname == 'report' then
+            imgui.SetNextWindowSize(imgui.ImVec2(450, 320), imgui.Cond.Always)
+
+            local title = u8'Репорт'
+            imgui.OpenPopup(title)
+            if imgui.BeginPopupModal(title, nil, imgui.WindowFlags.NoResize) then
+                local rtypes = {{name = 'Улучшение', color = '4439581'}, {name = 'Ошибка', color = '10951965'}}
+
+                imgui.SetCursorPosX(imgui.GetWindowWidth()/2 - imgui.CalcTextSize(u8'Форма обращения:').x / 2)
+                imgui.Text(u8'Форма обращения:')
+                imgui.RadioButtonIntPtr(u8'Улучшение', buff.radioInt.form_report, 0)
+                imgui.SameLine()
+                imgui.Text('                            |                        ')
+                imgui.SameLine()
+                imgui.RadioButtonIntPtr(u8'Ошибка', buff.radioInt.form_report, 1)
+                imgui.Separator()
+                
+                imgui.SetCursorPosX(imgui.GetWindowWidth()/2 - imgui.CalcTextSize(u8'Детальное описание обращения:').x / 2)
+                imgui.Text(u8'Детальное описание обращения:')
+                imgui.InputTextMultiline('##report_text', buff.text.report_text, sizeof(buff.text.report_text), imgui.ImVec2(-1, -1))
+
+                local report_nick = settings.player.nickname
+                local report_rang = u8:decode(settings.player.rang)..' ['..settings.player.rang_number..']'
+                local report_type = rtypes[buff.radioInt.form_report[0]+1].name
+                local format_text = string.gsub(str(buff.text.report_text), '\n', '\\n')
+                local report_text = u8:decode(format_text)
+                local report_data = os.date("%d.%m.%Y %H:%M")
+                local report_color = rtypes[buff.radioInt.form_report[0]+1].color
+
+                imgui.SetCursorPosX(imgui.GetWindowWidth()/2 - 140)  
+                if imgui.Button(u8'Отправить', imgui.ImVec2(140, 24)) then
+                    if #report_text == 0 then sampAddChatMessage(tag.."Вы не можете отправить обращение без текста!",-1) return end
+                    sendDiscord('https://discord.com/api/webhooks/1393659290774143028/jn1PGantXSPIB2Lvnc-IV_0cZ7SNhqhGUDkjDFKhI8urZYz39RcHnOpZgZqroJfaWb0Y', ([[{
+                                "content": null,
+                                "embeds": [
+                                    {
+                                    "title": "Поступил новый репорт!",
+                                    "description": "**Ник:** `%s`\n**Ранг:** `%s`\n**Вид обращения:** `%s`\n**Описание:**\n```%s```\n**Локальное время пользователя:** `%s`",
+                                    "color": %s
+                                    }
+                                ],
+                                "attachments": []
+                                }]]):format(report_nick, report_rang, report_type, report_text, report_data, report_color))
+                    sampAddChatMessage(tag.."Ваше обращение отправлено разработчику!",-1)
+                    imgui.CloseCurrentPopup()
+                    flag = false
+                end
+                imgui.SameLine()
+                if imgui.Button(u8'Закрыть', imgui.ImVec2(140, 24)) then
+                    imgui.CloseCurrentPopup()
+                    flag = false
+                end
+            end
+        end
         if modalname == 'asu_add' then
-            imgui.SetNextWindowSize(imgui.ImVec2(sw/3, sh/2.5 - 10), imgui.Cond.Always)
+            imgui.SetNextWindowSize(imgui.ImVec2(450, 300), imgui.Cond.Always)
 
             local title = u8'Добавление статьи'
             imgui.OpenPopup(title)
@@ -735,7 +820,7 @@ function popOpen(params)
             end
         end
         if modalname == 'asu' then
-            imgui.SetNextWindowSize(imgui.ImVec2(sw/3, sh/3 - 20), imgui.Cond.Always)
+            imgui.SetNextWindowSize(imgui.ImVec2(450, 235), imgui.Cond.Always)
 
             local title = u8'Редактирование статьи ##asu'
             imgui.OpenPopup(title)
@@ -773,7 +858,7 @@ function popOpen(params)
             imgui.EndPopup()
         end
         if modalname == 'dm' then
-            imgui.SetNextWindowSize(imgui.ImVec2(sw/3, sh/3 - 20), imgui.Cond.Always)
+            imgui.SetNextWindowSize(imgui.ImVec2(450, 235), imgui.Cond.Always)
 
             local title = u8'Редактирование статьи ##dm'
             imgui.OpenPopup(title)
@@ -813,7 +898,7 @@ function popOpen(params)
             imgui.EndPopup()
         end
         if modalname == 'dm_add' then
-            imgui.SetNextWindowSize(imgui.ImVec2(sw/3, sh/2.5 - 10), imgui.Cond.Always)
+            imgui.SetNextWindowSize(imgui.ImVec2(450, 300), imgui.Cond.Always)
 
             local title = u8'Добавление статьи'
             imgui.OpenPopup(title)
@@ -876,6 +961,46 @@ function popOpen(params)
     end)
 end
 
+function sendDiscord(URL, DATA, callback_ok, callback_error)
+    local function asyncHttpRequest(method, url, args, resolve, reject)
+        local request_thread = effil.thread(function (method, url, args)
+           local requests = require 'requests'
+           local result, response = pcall(requests.request, method, url, args)
+           if result then
+              response.json, response.xml = nil, nil
+              return true, response
+           else
+              return false, response
+           end
+        end)(method, url, args)
+        if not resolve then resolve = function() end end
+        if not reject then reject = function() end end
+        lua_thread.create(function()
+            local runner = request_thread
+            while true do
+                local status, err = runner:status()
+                if not err then
+                    if status == 'completed' then
+                        local result, response = runner:get()
+                        if result then
+                           resolve(response)
+                        else
+                           reject(response)
+                        end
+                        return
+                    elseif status == 'canceled' then
+                        return reject(status)
+                    end
+                else
+                    return reject(err)
+                end
+                wait(0)
+            end
+        end)
+    end
+    asyncHttpRequest('POST', URL, {headers = {['content-type'] = 'application/json'}, data = u8(DATA)}, callback_ok, callback_error)
+end
+
 --======================================== Инициализация mimgui =============================================--
 
 imgui.OnInitialize(function()
@@ -919,7 +1044,7 @@ local mw = imgui.OnFrame(function() return buff.window.main[0] end, function(pla
             if imgui.PageButton(page == 2, faicons('STAR'),               u8'Умный розыск [/asu]') then     page = 2 end
             if imgui.PageButton(page == 3, faicons('USER_XMARK'),         u8'Умный demoute [/dm]') then     page = 3 end
             if imgui.PageButton(page == 4, faicons('NOTE_STICKY'),        u8'Заметки') then                 page = 4 end 
-            if imgui.PageButton(page == 5, faicons('WALKIE_TALKIE'),      u8'Департамент [/dep]') then      page = 5 end
+            if imgui.PageButton(page == 5, faicons('WALKIE_TALKIE'),      u8'Департамент') then             page = 5 end
             if imgui.PageButton(page == 6, faicons('TERMINAL'),           u8'Чат команды') then             page = 6 end
             if imgui.PageButton(page == 99, faicons('LIST'),              u8'История обновлений') then      page = 99 end
         imgui.EndChild()
@@ -938,9 +1063,8 @@ local mw = imgui.OnFrame(function() return buff.window.main[0] end, function(pla
                 local btn_text = u8"Сообщить об ошибке"
                 imgui.SetCursorPos(imgui.ImVec2(x-imgui.CalcTextSize(btn_text.."._.").x, y-imgui.CalcTextSize(btn_text).y*2.1))
                 if imgui.Button(btn_text) then
-                    -- todo
+                    popOpen{modalname='report', flag=true}
                 end
-                imgui.TextHovered(u8"Функционал в разработке.")
 
             elseif page == 2 then       -- | ASU
                 imgui.SetCursorPosX(x/5)
@@ -970,10 +1094,10 @@ local mw = imgui.OnFrame(function() return buff.window.main[0] end, function(pla
                 for name, data in pairs(generate_buttons) do
                     if imgui.CollapsingHeader(name) then
                         for i, chapter in ipairs(data) do
-                            imgui.Button(chapter.text, imgui.ImVec2(imgui.GetWindowHeight() - 15, 25))
+                            imgui.Button(chapter.text, imgui.ImVec2(x - 100, 25))
                             imgui.TextHovered(u8("Санкция: "..chapter.star.." уровень розыска"))
                             imgui.SameLine()
-                            if imgui.Button(faicons('PEN').."##"..i, imgui.ImVec2(30, 25)) then
+                            if imgui.Button(faicons('PEN').."##"..i, imgui.ImVec2(0, 25)) then
                                 buff.text.edit_asu = new.char[10000](chapter.text)
                                 buff.int.edit_asu = new.int(chapter.star)
                                 popOpen{modalname='asu', flag=true, name=name, text=chapter.text, star=chapter.star}
@@ -981,7 +1105,7 @@ local mw = imgui.OnFrame(function() return buff.window.main[0] end, function(pla
                             
                             imgui.SameLine()
 
-                            if imgui.Button(faicons('TRASH').."##"..i, imgui.ImVec2(30, 25)) then
+                            if imgui.Button(faicons('TRASH').."##"..i, imgui.ImVec2(0, 25)) then
                                 deleteAsu(name, chapter.text, chapter.star)
                             end
                             imgui.TextHovered(u8"Для удаления записи необходимо\nскрыть остальные вкладки.")
@@ -1032,11 +1156,11 @@ local mw = imgui.OnFrame(function() return buff.window.main[0] end, function(pla
                 for name, data in pairs(generate_buttons) do
                     if imgui.CollapsingHeader(name) then
                         for i, chapter in ipairs(data) do
-                            imgui.Button(chapter.text, imgui.ImVec2(imgui.GetWindowHeight() - 15, 25))
+                            imgui.Button(chapter.text, imgui.ImVec2(x - 100, 25))
                             local sanctions = {[0] = u8'спец. выговор', [1] = u8'увольнение'}
                             imgui.TextHovered(u8"Санкция: "..sanctions[chapter.form])
                             imgui.SameLine()
-                            if imgui.Button(faicons('PEN').."##"..i, imgui.ImVec2(30, 25)) then
+                            if imgui.Button(faicons('PEN').."##"..i, imgui.ImVec2(0, 25)) then
                                 buff.text.edit_dm = new.char[10000](chapter.text)
                                 buff.radioInt.form_dm = new.int(chapter.form)
                                 popOpen{modalname='dm', flag=true, name=name, text=chapter.text, form=chapter.form}
@@ -1044,7 +1168,7 @@ local mw = imgui.OnFrame(function() return buff.window.main[0] end, function(pla
                             
                             imgui.SameLine()
 
-                            if imgui.Button(faicons('TRASH').."##"..i, imgui.ImVec2(30, 25)) then
+                            if imgui.Button(faicons('TRASH').."##"..i, imgui.ImVec2(0, 25)) then
                                 deleteDm(name, chapter.text, chapter.form)
                             end
                             imgui.TextHovered(u8"Для удаления записи необходимо\nскрыть остальные вкладки.")
@@ -1055,8 +1179,55 @@ local mw = imgui.OnFrame(function() return buff.window.main[0] end, function(pla
                 if imgui.InputTextMultiline('##notepadText', buff.text.notepad, sizeof(buff.text.notepad), imgui.ImVec2(-1, -1)) then -- EROR: (declaration specifier expected near '<eof>') imgui.InputTextMultiline("##MyMultilineInput", TextMultiLine, 256)
                     saveNote(u8(str(buff.text.notepad)))
                 end     
-            elseif page == 5 then
-                imgui.Text(u8'В разработке!')
+            elseif page == 5 then       -- | Dep
+                local orgs_name_list = {}
+                for _, org in ipairs(dep) do
+                    table.insert(orgs_name_list, u8(org.name))
+                end
+                local orgs_name = imgui.new['const char*'][#orgs_name_list](orgs_name_list)
+                
+                imgui.PushItemWidth(-1)
+                imgui.Combo(u8'##orgs_name', buff.combo.dep, orgs_name, #orgs_name_list)
+                imgui.PopItemWidth()
+                local listen_org = {name = u8(dep[buff.combo.dep[0]+1].name), tag = u8(dep[buff.combo.dep[0]+1].tag)}
+                imgui.Separator()
+
+                if listen_org.tag ~= 'None' then
+                    local send_tag = u8'[ФБР] - ['..listen_org.tag..']: '
+                    local send_text = send_tag..str(buff.text.dep_text)
+
+                    imgui.SetCursorPosX(x/2 - imgui.CalcTextSize(u8"Отправить сообщение:").x/2)
+                    imgui.Text(u8"Отправить сообщение:")
+                    imgui.PushItemWidth(x - imgui.CalcTextSize(u8"Отправить").x - 55)
+                    imgui.InputText("##dep_text", buff.text.dep_text, sizeof(buff.text.dep_text))
+                    imgui.PopItemWidth()
+                    imgui.SameLine()
+                    if imgui.Button(u8"Отправить", imgui.ImVec2(0, 25)) or isKeyJustPressed(VK_RETURN) then
+                        if #str(buff.text.dep_text) > 0 then sampSendChat(u8:decode('/d '..send_text)) end
+                    end
+                    imgui.SetCursorPosX(x/2 - imgui.CalcTextSize(u8'Нет сообщения для отправки!').x/2)
+                    if #str(buff.text.dep_text) == 0 then imgui.TextColored(imgui.ImVec4(1, 0, 0, 1), u8'Нет сообщения для отправки!') end
+
+                    imgui.Separator()
+                    imgui.SetCursorPosX(x/2 - imgui.CalcTextSize(u8"Текст при отправке:").x/2)
+                    imgui.Text(u8"Текст при отправке:")
+                    imgui.TextWrapped(send_text)
+                    imgui.Separator()
+                end
+                
+                imgui.SetCursorPosX(x/2 - imgui.CalcTextSize(u8"Лог сообщений:").x/2)
+                imgui.Text(u8"Лог сообщений:")
+                imgui.BeginChild('dep_message_log', imgui.ImVec2(-1, -1), true)
+                    local org_logs = {}
+                    for _, org in ipairs(dep) do
+                        if org.tag == u8:decode(listen_org.tag) then
+                            org_logs = org.log
+                        end
+                    end
+                    local send_log = ''
+                    for i = #org_logs, 1, -1 do send_log = send_log..u8(org_logs[i]).."\n---------\n" end
+                    imgui.TextWrapped(send_log)
+                imgui.EndChild()
             elseif page == 6 then       -- | Chat Commands
                 local text =  
 [[
@@ -1423,6 +1594,17 @@ function sampev.onShowDialog(dialogId, style, title, button1, button2, text)
 end
 
 function sampev.onServerMessage(color, text)
+
+    -- Умный /dep 865730559
+    if string.find(string.rlower(text), 'фбр') then
+        local clean_text = string.gsub(text, "%{[^}]+%}", "")
+        table.insert(dep[1].log, clean_text)
+        for i, org in ipairs(dep) do
+            if string.find(string.rlower(text), string.rlower(org.tag)) then
+                table.insert(dep[i].log, clean_text)
+            end 
+        end
+    end
 
     -- sampev Умный demoute
     if string.find(text, 'Вы можете') and dm.use_dismiss then dm.use_dismiss = false
