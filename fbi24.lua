@@ -2,7 +2,7 @@
 
 script_name("FBI Helper")
 script_author("Joe Davidson")
-script_version("0.1.2")
+script_version("0.1.1")
 script_description('Multifunctional FBI helper for Arizona Wednesday')
 
 -- Основные подключения
@@ -1060,7 +1060,7 @@ local mw = imgui.OnFrame(function() return buff.window.main[0] end, function(pla
                 imgui.SetCursorPos(imgui.ImVec2(imgui.CalcTextSize(info_text).x*0.05, y-imgui.CalcTextSize(info_text).y*1.5))
                 imgui.Text(info_text)
 
-                local btn_text = u8"Сообщить об ошибке"
+                local btn_text = u8"Связаться с разработчиком"
                 imgui.SetCursorPos(imgui.ImVec2(x-imgui.CalcTextSize(btn_text.."._.").x, y-imgui.CalcTextSize(btn_text).y*2.1))
                 if imgui.Button(btn_text) then
                     popOpen{modalname='report', flag=true}
@@ -1595,8 +1595,8 @@ end
 
 function sampev.onServerMessage(color, text)
 
-    -- Умный /dep 865730559
-    if string.find(string.rlower(text), 'фбр') then
+    -- Умный /dep
+    if color == 865730559 and string.find(string.rlower(text), 'фбр') then
         local clean_text = string.gsub(text, "%{[^}]+%}", "")
         table.insert(dep[1].log, clean_text)
         for i, org in ipairs(dep) do
