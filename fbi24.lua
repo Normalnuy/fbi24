@@ -2,7 +2,7 @@
 
 script_name("FBI Helper")
 script_author("Joe Davidson")
-script_version("0.1.1")
+script_version("0.1.2")
 script_description('Multifunctional FBI helper for Arizona Wednesday')
 
 -- Основные подключения
