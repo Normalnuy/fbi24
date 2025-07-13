@@ -1431,6 +1431,7 @@ local uw = imgui.OnFrame(function() return buff.window.update[0] end, function(p
         if imgui.Button(u8"Установить!") then
             downloadUrlToFile(updatelink, thisScript().path,
             function(id3, status1, p13, p23)
+                local dlstatus = require('moonloader').download_status
                 if status1 == dlstatus.STATUS_DOWNLOADINGDATA then
                     print(string.format('Загружено %d из %d.', p13, p23))
                 elseif status1 == dlstatus.STATUS_ENDDOWNLOADDATA then
