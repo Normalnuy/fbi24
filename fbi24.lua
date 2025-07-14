@@ -2,7 +2,7 @@
 
 script_name("FBI Helper")
 script_author("Joe Davidson")
-script_version("0.1.3")
+script_version("0.1.4")
 script_description('Multifunctional FBI helper for Arizona Wednesday')
 
 -- Основные подключения
@@ -1504,6 +1504,9 @@ local mw = imgui.OnFrame(function() return buff.window.main[0] end, function(pla
                         imgui.EndTabItem()
                     end
                     if imgui.BeginTabItem(u8'Быстрые ответы [/dep]') then
+                        if not settings.dep.articles then settings.dep.articles = {} save_settings(false) end
+
+
                         imgui.Separator()
                         if imgui.Button(faicons('PLUS'), imgui.ImVec2(-1, 25)) then
                             popOpen{modalname='fastdep', flag=true}
