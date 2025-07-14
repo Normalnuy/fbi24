@@ -47,6 +47,7 @@ local tag = blue_color.."[ FBI Helper | "..red_color.."Joe Davidson "..blue_colo
 --=================================== Состояия =============================================================--
 
 local pre_start = true
+local dep_selected_article = nil
 
 --=================================== Переменные для скриптов ===============================================--
 
@@ -87,7 +88,9 @@ local default_settings = {
         status = 0,         -- 0 - нет доступа, 1 - dismiss/gwarns, 2 - demote
         articles = {},
     },
-    dep = {}
+    dep = {
+        articles = {}
+    }
 }
 
 local asu = {
@@ -202,6 +205,7 @@ local buff = {
         dm = new.bool(),
         gwarns_dm = new.bool(),
         update = new.bool(),
+        dep = new.bool()
     },
     text = {
         find_asu = new.char[10000](),
@@ -215,6 +219,11 @@ local buff = {
         edit_dm = new.char[10000](),
         dep_text = new.char[10000](),
         report_text = new.char[10000](),
+        add_dep_name = new.char[10000](),
+        add_dep_text = new.char[10000](),
+        add_dep_btn_text = new.char[10000](),
+        edit_dep_text = new.char[10000](),
+        edit_dep_btn_text = new.char[10000](),
     },
     int = {
         add_asu = new.int(1),
@@ -223,14 +232,18 @@ local buff = {
     combo = {
         add_asu = new.int(),
         add_dm = new.int(),
-        dep = new.int()
-
+        dep = new.int(),
+        add_dep = new.int(),
     },
     radioInt = {
         form_dm = new.int(),
         form_report = new.int(),
     }
 }
+
+--=================================== TODO лист =============================================================--
+
+-- 1. Поменять версию скрипта на 0.1.3 перед публикацией
 
 --=================================== ПРОГРАММА =============================================================--
 function main()
@@ -348,6 +361,10 @@ function cmd_dm(arg)
     end
 end
 
+function cmd_dep()
+    buff.window.dep[0] = not buff.window.dep[0]
+end
+
 --==========================================================================================================--
 
 --      ** ** ** ** **       **          **      **          **      ** ** ** ** **      ** ** ** ** **     --
@@ -379,7 +396,7 @@ function sampRegisterChatCommands()
     sampRegisterChatCommand("org", cmd_org)
     sampRegisterChatCommand("asu", cmd_asu)
     sampRegisterChatCommand("dm", cmd_dm)
-
+    sampRegisterChatCommand("dep", cmd_dep)
 end
 
 function generateOrganizations()
@@ -458,7 +475,7 @@ end
 function checkCloseWindowEsc()
     addEventHandler('onWindowMessage', function(msg, wparam, lparam)
         if wparam == 27 then
-            if buff.window.asu[0] then             -- aw
+            if     buff.window.asu[0] then         -- aw
                 if msg == wm.WM_KEYDOWN then consumeWindowMessage(true, false) end
                 if msg == wm.WM_KEYUP then buff.window.asu[0] = false end 
             elseif buff.window.dm[0] then          -- dw
@@ -469,6 +486,9 @@ function checkCloseWindowEsc()
             elseif buff.window.main[0] then        -- main
                 if msg == wm.WM_KEYDOWN then consumeWindowMessage(true, false) end
                 if msg == wm.WM_KEYUP then buff.window.main[0] = false end 
+            elseif buff.window.dep[0] then         -- dep
+                if msg == wm.WM_KEYDOWN then consumeWindowMessage(true, false) end
+                if msg == wm.WM_KEYUP then buff.window.dep[0] = false end 
             end
         end
     end)
@@ -631,6 +651,19 @@ function addDm(name, text, form)
     return true
 end
 
+function addDep(name, btn_text, text)
+    for i, article in ipairs(settings.dep.articles) do
+        if article.name == name then
+            table.insert(settings.dep.articles[i].chapters, {btn_text = btn_text, text = text})
+            save_settings(true)
+            return true
+        end
+    end
+    table.insert(settings.dep.articles, {name = name, chapters = {{btn_text = btn_text, text = text}}})
+    save_settings(true)
+    return true
+end
+
 function editAsu(name, old_text, old_star, text, star)
     for i, article in ipairs(settings.asu.articles) do
         if article.name == name then
@@ -653,6 +686,21 @@ function editDm(name, old_text, old_form, text, form)
                 if chapter.text == old_text and chapter.form == old_form then
                     settings.dm.articles[i].chapters[j].text = text
                     settings.dm.articles[i].chapters[j].form = form
+                    save_settings(true)
+                    return true
+                end
+            end
+        end
+    end
+end
+
+function editDep(name, old_btn_text, old_text, btn_text, text)
+    for i, article in ipairs(settings.dep.articles) do
+        if article.name == name then
+            for j, chapter in ipairs(article.chapters) do
+                if chapter.btn_text == old_btn_text and chapter.text == old_text then
+                    settings.dep.articles[i].chapters[j].btn_text = btn_text
+                    settings.dep.articles[i].chapters[j].text = text
                     save_settings(true)
                     return true
                 end
@@ -695,10 +743,28 @@ function deleteDm(name, text, form)
     end
 end
 
+function deleteDep(name, btn_text, text)
+    for i, article in ipairs(settings.dep.articles) do
+        if article.name == name then
+            for j, chapter in ipairs(article.chapters) do
+                if chapter.btn_text == btn_text and chapter.text == text then
+                    table.remove(article.chapters, j)
+                    if #article.chapters == 0 then
+                        table.remove(settings.dep.articles, i)
+                    end
+                    save_settings(true)
+                    return true
+                end
+            end
+        end
+    end
+end
+
 function popOpen(params)
     local modalname = params.modalname
     local flag = params.flag
     local name = params.name or ""
+    local btn_text = params.btn_text or ""
     local text = params.text or ""
     local star = params.star or 0
     local form = params.form or 0
@@ -706,6 +772,106 @@ function popOpen(params)
     imgui.OnFrame(function() return flag and not isPauseMenuActive() and not sampIsScoreboardOpen() end, function()
         imgui.SetNextWindowPos(imgui.ImVec2(sw / 2, sh / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
         
+        if modalname == 'dep' then
+            imgui.SetNextWindowSize(imgui.ImVec2(450, 235), imgui.Cond.Always)
+
+            local title = u8'Редактирование кнопки ##dep'
+            imgui.OpenPopup(title)
+            if imgui.BeginPopupModal(title, nil, imgui.WindowFlags.NoResize) then
+                imgui.SetCursorPosX(imgui.GetWindowWidth()/2 - imgui.CalcTextSize(u8"Раздел: "..'"'..name..'"').x / 2)
+                imgui.Text(u8"Раздел: "..'"'..name..'"')
+                imgui.Separator()
+                
+                imgui.SetCursorPosX(imgui.GetWindowWidth()/2 - imgui.CalcTextSize(u8'Текст кнопки:').x / 2)
+                imgui.Text(u8'Текст кнопки:')
+                imgui.PushItemWidth(-1)
+                imgui.InputTextWithHint('##edit_dep_btn_text', u8'Текст кнопки.', buff.text.edit_dep_btn_text, sizeof(buff.text.edit_dep_btn_text), imgui.InputTextFlags.AutoSelectAll)
+                imgui.PopItemWidth()
+                imgui.Separator()
+
+                imgui.SetCursorPosX(imgui.GetWindowWidth()/2 - imgui.CalcTextSize(u8'Текст в /d:').x / 2)
+                imgui.Text(u8'Текст в /d:')
+                imgui.PushItemWidth(-1)
+                imgui.InputTextWithHint('##edit_dep_text', u8'Текст в /d.', buff.text.edit_dep_text, sizeof(buff.text.edit_dep_text), imgui.InputTextFlags.AutoSelectAll)
+                imgui.PopItemWidth()
+                imgui.Separator()
+
+                imgui.SetCursorPosX(imgui.GetWindowWidth()/2 - 140)  
+                if imgui.Button(u8'Сохранить', imgui.ImVec2(140, 24)) then
+                    editDep(name, btn_text, text, str(buff.text.edit_dep_btn_text), str(buff.text.edit_dep_text))
+                    imgui.CloseCurrentPopup()
+                    flag = false
+                end
+                imgui.SameLine()
+                if imgui.Button(u8'Закрыть', imgui.ImVec2(140, 24)) then
+                    imgui.CloseCurrentPopup()
+                    flag = false
+                end
+            end
+            imgui.EndPopup()
+        end
+        if modalname == 'fastdep' then
+            imgui.SetNextWindowSize(imgui.ImVec2(450, 300), imgui.Cond.Always)
+
+            local title = u8'Быстрый /dep'
+            imgui.OpenPopup(title)
+            if imgui.BeginPopupModal(title, nil, imgui.WindowFlags.NoResize) then
+                if not settings.dep.articles then settings.dep = {articles = {}} end
+
+                local chapter_list = {}
+                for _, article in ipairs(settings.dep.articles) do
+                    table.insert(chapter_list, article.name)
+                end
+                table.insert(chapter_list, u8'Новый раздел')
+                local chapters = imgui.new['const char*'][#chapter_list](chapter_list)
+                
+                imgui.SetCursorPosX(imgui.GetWindowWidth()/2 - imgui.CalcTextSize(u8'Раздел').x / 2)
+                imgui.Text(u8'Раздел')
+                imgui.PushItemWidth(-1)
+                imgui.Combo(u8'##chapters', buff.combo.add_dep, chapters, #chapter_list)
+                imgui.PopItemWidth()
+
+                if buff.combo.add_dep[0] == #chapter_list-1 then
+                    imgui.PushItemWidth(-1)
+                    imgui.InputTextWithHint('##add_dep_name', u8'Название нового раздела.', buff.text.add_dep_name, sizeof(buff.text.add_dep_name), imgui.InputTextFlags.AutoSelectAll)
+                    imgui.PopItemWidth()
+                end
+                imgui.Separator()
+
+                imgui.SetCursorPosX(imgui.GetWindowWidth()/2 - imgui.CalcTextSize(u8'Текст статьи:').x / 2)
+                imgui.Text(u8'Название кнопки:')
+                imgui.PushItemWidth(-1)
+                imgui.InputTextWithHint('##add_dep_btn_text', u8'Название кнопки.', buff.text.add_dep_btn_text, sizeof(buff.text.add_dep_btn_text), imgui.InputTextFlags.AutoSelectAll)
+                imgui.PopItemWidth()
+                imgui.Separator()
+
+                imgui.SetCursorPosX(imgui.GetWindowWidth()/2 - imgui.CalcTextSize(u8'Текст в /d:').x / 2)
+                imgui.Text(u8'Текст в /d:')
+                imgui.PushItemWidth(-1)
+                imgui.InputTextWithHint('##add_dep_text', u8'Текст при нажатии на кнопку.', buff.text.add_dep_text, sizeof(buff.text.add_dep_text), imgui.InputTextFlags.AutoSelectAll)
+                imgui.PopItemWidth()
+                imgui.Separator()
+
+                local add_name = ''
+                local add_btn_text = str(buff.text.add_dep_btn_text)
+                local add_text = str(buff.text.add_dep_text)
+
+                if buff.combo.add_dep[0] == #chapter_list-1 then    add_name = str(buff.text.add_dep_name)
+                else                                                add_name = chapter_list[buff.combo.add_dep[0]+1] end
+
+                imgui.SetCursorPosX(imgui.GetWindowWidth()/2 - 140)  
+                if imgui.Button(u8'Сохранить', imgui.ImVec2(140, 24)) then
+                    addDep(add_name, add_btn_text, add_text)
+                    imgui.CloseCurrentPopup()
+                    flag = false
+                end
+                imgui.SameLine()
+                if imgui.Button(u8'Закрыть', imgui.ImVec2(140, 24)) then
+                    imgui.CloseCurrentPopup()
+                    flag = false
+                end
+            end
+        end
         if modalname == 'report' then
             imgui.SetNextWindowSize(imgui.ImVec2(450, 320), imgui.Cond.Always)
 
@@ -1001,6 +1167,32 @@ function sendDiscord(URL, DATA, callback_ok, callback_error)
     asyncHttpRequest('POST', URL, {headers = {['content-type'] = 'application/json'}, data = u8(DATA)}, callback_ok, callback_error)
 end
 
+function DrawCenteredButtons(items, getText, buttonWidth, buttonHeight, buttonsInRow, onClick)
+    local total = #items
+    local windowWidth = imgui.GetWindowWidth()
+    local rowCount = math.ceil(total / buttonsInRow)
+
+    for row = 1, rowCount do
+        local startIdx = (row - 1) * buttonsInRow + 1
+        local endIdx = math.min(row * buttonsInRow, total)
+        local buttonsInThisRow = endIdx - startIdx + 1
+
+        local totalButtonsWidth = buttonsInThisRow * buttonWidth + (buttonsInThisRow - 1) * imgui.GetStyle().ItemSpacing.x
+        local offsetX = math.max((windowWidth - totalButtonsWidth) / 2, 0)
+        imgui.SetCursorPosX(offsetX)
+
+        for i = startIdx, endIdx do
+            if imgui.Button(getText(items[i]), imgui.ImVec2(buttonWidth, buttonHeight)) then
+                if onClick then onClick(items[i]) end
+            end
+            if i < endIdx then
+                imgui.SameLine()
+            end
+        end
+        imgui.NewLine()
+    end
+end
+
 --======================================== Инициализация mimgui =============================================--
 
 imgui.OnInitialize(function()
@@ -1044,7 +1236,7 @@ local mw = imgui.OnFrame(function() return buff.window.main[0] end, function(pla
             if imgui.PageButton(page == 2, faicons('STAR'),               u8'Умный розыск [/asu]') then     page = 2 end
             if imgui.PageButton(page == 3, faicons('USER_XMARK'),         u8'Умный demoute [/dm]') then     page = 3 end
             if imgui.PageButton(page == 4, faicons('NOTE_STICKY'),        u8'Заметки') then                 page = 4 end 
-            if imgui.PageButton(page == 5, faicons('WALKIE_TALKIE'),      u8'Департамент') then             page = 5 end
+            if imgui.PageButton(page == 5, faicons('WALKIE_TALKIE'),      u8'Департамент [/dep]') then             page = 5 end
             if imgui.PageButton(page == 6, faicons('TERMINAL'),           u8'Чат команды') then             page = 6 end
             if imgui.PageButton(page == 99, faicons('LIST'),              u8'История обновлений') then      page = 99 end
         imgui.EndChild()
@@ -1052,16 +1244,94 @@ local mw = imgui.OnFrame(function() return buff.window.main[0] end, function(pla
         imgui.BeginChild('workspace', imgui.ImVec2(-1, -1), true, imgui.WindowFlags.NoScrollbar)
             local x, y = imgui.GetWindowWidth(), imgui.GetWindowHeight()    
             if     page == 1 then
-                local logo_size = { x = 325, y = 325 }
-                imgui.SetCursorPos(imgui.ImVec2(x/2-logo_size.x/2, y/20))
+                local logo_size = { x = 180, y = 180 }
+                
+                -- Размещаем логотип чуть выше и центрируем
+                imgui.SetCursorPos(imgui.ImVec2(x/2 - logo_size.x/2, y/25)) -- Чуть выше
                 imgui.Image(fbi_logo, imgui.ImVec2(logo_size.x, logo_size.y))
+                
+                imgui.Spacing() -- Один небольшой отступ
+                
+                -- Приветственное сообщение
+                local welcome_text = u8"Добро пожаловать в FBI Helper!"
+                local slogan_text = u8"Ваш незаменимый помощник в работе FBI."
+                
+                imgui.SetCursorPosX(x/2 - imgui.CalcTextSize(welcome_text).x/2)
+                imgui.PushFont(font_bold)
+                imgui.TextColored(imgui.ImVec4(1.0, 0.6, 0.0, 1.0), welcome_text)
+                imgui.PopFont()
+                
+                imgui.SetCursorPosX(x/2 - imgui.CalcTextSize(slogan_text).x/2)
+                imgui.Text(slogan_text)
+                
+                imgui.Separator()
+                imgui.Spacing() -- Один небольшой отступ
 
-                local info_text = u8"Версия: "..thisScript().version.." | "..u8"Автор: "..u8"Joe Davidson"
-                imgui.SetCursorPos(imgui.ImVec2(imgui.CalcTextSize(info_text).x*0.05, y-imgui.CalcTextSize(info_text).y*1.5))
-                imgui.Text(info_text)
+                -- Информация о пользователе
+                local player_name = settings.player.nickname or u8"Неизвестно"
+                local player_rang = settings.player.rang..' ['..settings.player.rang_number..u8' ранг]' or u8"Неизвестен"
+                local player_info_text = u8"Имя: "..player_name..u8" | Ранг: "..player_rang
+                
+                imgui.SetCursorPosX(x/2 - imgui.CalcTextSize(player_info_text).x/2)
+                imgui.Text(player_info_text)
+                
+                imgui.Separator()
+                imgui.Spacing() -- Один небольшой отступ
 
+                -- Быстрый доступ к разделам
+                local quick_access_header = u8"Быстрый доступ:"
+                imgui.SetCursorPosX(x/2 - imgui.CalcTextSize(quick_access_header).x/2)
+                imgui.PushFont(font_bold)
+                imgui.TextColored(imgui.ImVec4(0.8, 0.8, 0.8, 1.0), quick_access_header)
+                imgui.PopFont()
+                imgui.Spacing() -- Один небольшой отступ
+
+                -- Кнопки быстрого доступа
+                local button_width = (x - 30) / 2 -- Ширина кнопок, учитывая маленький отступ по краям и между ними
+                local button_height = 35 -- Чуть уменьшенная высота кнопок
+
+                imgui.SetCursorPosX(10) -- Отступ слева
+                if imgui.Button(faicons('STAR')..u8" Умный розыск [/asu]", imgui.ImVec2(button_width, button_height)) then
+                    page = 2
+                end
+                imgui.SameLine()
+                imgui.SetCursorPosX(10 + button_width + 10) -- Отступ между кнопками
+                if imgui.Button(faicons('USER_XMARK')..u8" Умный Demoute [/dm]", imgui.ImVec2(button_width, button_height)) then
+                    page = 3
+                end
+                
+                imgui.Spacing() -- Небольшой отступ между рядами кнопок
+
+                imgui.SetCursorPosX(10)
+                if imgui.Button(faicons('WALKIE_TALKIE')..u8" Департамент [/dep]", imgui.ImVec2(button_width, button_height)) then
+                    page = 5
+                end
+                imgui.SameLine()
+                imgui.SetCursorPosX(10 + button_width + 10)
+                if imgui.Button(faicons('TERMINAL')..u8" Чат команды", imgui.ImVec2(button_width, button_height)) then
+                    page = 6
+                end
+                
+                imgui.Spacing()
+                imgui.Separator()
+                imgui.Spacing()
+
+                -- Информация о версии и кнопка связи
+                local info_text_version = u8"Версия: "..thisScript().version
+                local info_text_author = u8"Автор: "..u8"Joe Davidson"
+                
+                -- Выравниваем текст версии и автора по левому краю в нижней части
+                -- Скорректируем позицию для более плотного размещения
+                imgui.SetCursorPos(imgui.ImVec2(10, y - imgui.CalcTextSize(info_text_version).y * 2.25))
+                imgui.Text(info_text_version)
+                
+                imgui.SetCursorPos(imgui.ImVec2(10, y - imgui.CalcTextSize(info_text_author).y * 1.25))
+                imgui.Text(info_text_author)
+
+                -- Кнопка "Связаться с разработчиком" - размещаем справа внизу
                 local btn_text = u8"Связаться с разработчиком"
-                imgui.SetCursorPos(imgui.ImVec2(x-imgui.CalcTextSize(btn_text.."._.").x, y-imgui.CalcTextSize(btn_text).y*2.1))
+                -- Скорректируем позицию для более плотного размещения
+                imgui.SetCursorPos(imgui.ImVec2(x - imgui.CalcTextSize(btn_text).x - 20, y - imgui.CalcTextSize(btn_text).y * 2.2))
                 if imgui.Button(btn_text) then
                     popOpen{modalname='report', flag=true}
                 end
@@ -1180,77 +1450,182 @@ local mw = imgui.OnFrame(function() return buff.window.main[0] end, function(pla
                     saveNote(u8(str(buff.text.notepad)))
                 end     
             elseif page == 5 then       -- | Dep
-                local orgs_name_list = {}
-                for _, org in ipairs(dep) do
-                    table.insert(orgs_name_list, u8(org.name))
-                end
-                local orgs_name = imgui.new['const char*'][#orgs_name_list](orgs_name_list)
-                
-                imgui.PushItemWidth(-1)
-                imgui.Combo(u8'##orgs_name', buff.combo.dep, orgs_name, #orgs_name_list)
-                imgui.PopItemWidth()
-                local listen_org = {name = u8(dep[buff.combo.dep[0]+1].name), tag = u8(dep[buff.combo.dep[0]+1].tag)}
+                if imgui.BeginTabBar('DepTabs') then 
+                    if imgui.BeginTabItem(u8'Рация департамента') then
+                        imgui.Separator()
+                        local orgs_name_list = {}
+                        for _, org in ipairs(dep) do
+                            table.insert(orgs_name_list, u8(org.name))
+                        end
+                        local orgs_name = imgui.new['const char*'][#orgs_name_list](orgs_name_list)
+
+                        imgui.PushItemWidth(-1)
+                        imgui.Combo(u8'##orgs_name', buff.combo.dep, orgs_name, #orgs_name_list)
+                        imgui.PopItemWidth()
+                        local listen_org = {name = u8(dep[buff.combo.dep[0]+1].name), tag = u8(dep[buff.combo.dep[0]+1].tag)}
+                        imgui.Separator()
+
+                        if listen_org.tag ~= 'None' then
+                            local send_tag = u8'[ФБР] - ['..listen_org.tag..']: '
+                            local send_text = send_tag..str(buff.text.dep_text)
+
+                            imgui.SetCursorPosX(x/2 - imgui.CalcTextSize(u8"Отправить сообщение:").x/2)
+                            imgui.Text(u8"Отправить сообщение:")
+                            imgui.PushItemWidth(x - imgui.CalcTextSize(u8"Отправить").x - 55)
+                            imgui.InputText("##dep_text", buff.text.dep_text, sizeof(buff.text.dep_text))
+                            imgui.PopItemWidth()
+                            imgui.SameLine()
+                            if imgui.Button(u8"Отправить", imgui.ImVec2(0, 25)) or isKeyJustPressed(VK_RETURN) then
+                                if #str(buff.text.dep_text) > 0 then sampSendChat(u8:decode('/d '..send_text)) end
+                            end
+                            imgui.SetCursorPosX(x/2 - imgui.CalcTextSize(u8'Нет сообщения для отправки!').x/2)
+                            if #str(buff.text.dep_text) == 0 then imgui.TextColored(imgui.ImVec4(1, 0, 0, 1), u8'Нет сообщения для отправки!') end
+
+                            imgui.Separator()
+                            imgui.SetCursorPosX(x/2 - imgui.CalcTextSize(u8"Текст при отправке:").x/2)
+                            imgui.Text(u8"Текст при отправке:")
+                            imgui.TextWrapped(send_text)
+                            imgui.Separator()
+                        end
+                        
+                        imgui.SetCursorPosX(x/2 - imgui.CalcTextSize(u8"Лог сообщений:").x/2)
+                        imgui.Text(u8"Лог сообщений:")
+                        imgui.BeginChild('dep_message_log', imgui.ImVec2(-1, -1), true)
+                            local org_logs = {}
+                            for _, org in ipairs(dep) do
+                                if org.tag == u8:decode(listen_org.tag) then
+                                    org_logs = org.log
+                                end
+                            end
+                            local send_log = ''
+                            for i = #org_logs, 1, -1 do send_log = send_log..u8(org_logs[i]).."\n---------\n" end
+                            imgui.TextWrapped(send_log)
+                        imgui.EndChild()
+                        imgui.EndTabItem()
+                    end
+                    if imgui.BeginTabItem(u8'Быстрые ответы [/dep]') then
+                        imgui.Separator()
+                        if imgui.Button(faicons('PLUS'), imgui.ImVec2(-1, 25)) then
+                            popOpen{modalname='fastdep', flag=true}
+                        end
+                        imgui.Separator()
+
+                        local generate_buttons = {}
+                        for _, article in ipairs(settings.dep.articles) do
+                            for _, chapter in ipairs(article.chapters) do
+                                if not generate_buttons[article.name] then generate_buttons[article.name] = {} end
+                                table.insert(generate_buttons[article.name], {btn_text = chapter.btn_text, text = chapter.text})
+                            end
+                        end
+                        
+                        for name, data in pairs(generate_buttons) do
+                            if imgui.CollapsingHeader(name) then
+                                for i, chapter in ipairs(data) do
+                                    imgui.Button(chapter.btn_text, imgui.ImVec2(x - 100, 25))
+                                    imgui.TextHovered(chapter.text)
+                                    imgui.SameLine()
+                                    if imgui.Button(faicons('PEN').."##"..i, imgui.ImVec2(0, 25)) then
+                                        buff.text.edit_dep_btn_text = new.char[10000](chapter.btn_text)
+                                        buff.text.edit_dep_text = new.char[10000](chapter.text)
+                                        popOpen{modalname='dep', flag=true, name=name, btn_text=chapter.btn_text, text=chapter.text}
+                                    end
+                                    
+                                    imgui.SameLine()
+
+                                    if imgui.Button(faicons('TRASH').."##"..i, imgui.ImVec2(0, 25)) then
+                                        deleteDep(name, chapter.btn_text, chapter.text)
+                                    end
+                                    imgui.TextHovered(u8"Для удаления записи необходимо\nскрыть остальные вкладки.")
+                                end
+                            end
+                        end
+                        imgui.EndTabItem()
+                    end
+                    imgui.EndTabBar()
+                end  
+            elseif page == 6 then       -- | Chat Commands
+                -- Авто-поиск игрока
+                imgui.TextColored(imgui.ImVec4(1.0, 0.6, 0.0, 1.0), faicons('MAGNIFYING_GLASS')..u8"  Авто-поиск игрока")
+                imgui.Spacing()
+                imgui.Indent()
+                    imgui.Text(u8"• Команда для активации:")
+                    imgui.SameLine()
+                    imgui.TextColored(imgui.ImVec4(0.3, 0.7, 1.0, 1.0), u8"/afind [id]") 
+                    imgui.Text(u8"• Команда для деактивации:")
+                    imgui.SameLine()
+                    imgui.TextColored(imgui.ImVec4(0.3, 0.7, 1.0, 1.0), u8"/afind")
+                    imgui.Text(u8"  (   или аналогичный вариант: ")
+                    imgui.SameLine()
+                    imgui.TextColored(imgui.ImVec4(0.3, 0.7, 1.0, 1.0), u8"/afind [last_id]")
+                    imgui.SameLine()
+                    imgui.Text(")")
+
+                imgui.Unindent()
+                imgui.Spacing()
+                imgui.Separator()
+                imgui.Spacing()
+
+                -- Пробив организации игрока
+                imgui.TextColored(imgui.ImVec4(1.0, 0.6, 0.0, 1.0), faicons('BUILDING')..u8"  Пробив организации игрока")
+                imgui.Spacing()
+                imgui.Indent()
+                    imgui.Text(u8"• Команда для активации:")
+                    imgui.SameLine()
+                    imgui.TextColored(imgui.ImVec4(0.3, 0.7, 1.0, 1.0), u8"/org [id]")
+                imgui.Unindent()
+                imgui.Spacing()
+                imgui.Separator()
+                imgui.Spacing()
+
+                -- Умная выдача розыска
+                imgui.TextColored(imgui.ImVec4(1.0, 0.6, 0.0, 1.0), faicons('STAR')..u8"  Умная выдача розыска")
+                imgui.Spacing()
+                imgui.Indent()
+                    imgui.Text(u8"• Команда для активации:")
+                    imgui.SameLine()
+                    imgui.TextColored(imgui.ImVec4(0.3, 0.7, 1.0, 1.0), u8"/asu [id]")
+                imgui.Unindent()
+                imgui.Spacing()
+                imgui.Separator()
+                imgui.Spacing()
+
+                -- Умный demoute | dismiss | gwarn
+                imgui.TextColored(imgui.ImVec4(1.0, 0.6, 0.0, 1.0), faicons('USER_XMARK')..u8"  Умный demoute | dismiss | gwarn")
+                imgui.Spacing()
+                imgui.Indent()
+                    imgui.Text(u8"• Команда для активации:")
+                    imgui.SameLine()
+                    imgui.TextColored(imgui.ImVec4(0.3, 0.7, 1.0, 1.0), u8"/dm [id]")
+                imgui.Unindent()
+                imgui.Spacing()
+                imgui.Separator()
+                imgui.Spacing()
+
+                -- Быстрые сообщения /d
+                imgui.TextColored(imgui.ImVec4(1.0, 0.6, 0.0, 1.0), faicons('SHARE_FROM_SQUARE')..u8"  Быстрые сообщения /d") -- Или другая иконка, похожая на рупор/чат
+                imgui.Spacing()
+                imgui.Indent()
+                    imgui.Text(u8"• Команда для активации:")
+                    imgui.SameLine()
+                    imgui.TextColored(imgui.ImVec4(0.3, 0.7, 1.0, 1.0), u8"/dep")
+                imgui.Unindent()
+                imgui.Spacing()
                 imgui.Separator()
 
-                if listen_org.tag ~= 'None' then
-                    local send_tag = u8'[ФБР] - ['..listen_org.tag..']: '
-                    local send_text = send_tag..str(buff.text.dep_text)
 
-                    imgui.SetCursorPosX(x/2 - imgui.CalcTextSize(u8"Отправить сообщение:").x/2)
-                    imgui.Text(u8"Отправить сообщение:")
-                    imgui.PushItemWidth(x - imgui.CalcTextSize(u8"Отправить").x - 55)
-                    imgui.InputText("##dep_text", buff.text.dep_text, sizeof(buff.text.dep_text))
-                    imgui.PopItemWidth()
-                    imgui.SameLine()
-                    if imgui.Button(u8"Отправить", imgui.ImVec2(0, 25)) or isKeyJustPressed(VK_RETURN) then
-                        if #str(buff.text.dep_text) > 0 then sampSendChat(u8:decode('/d '..send_text)) end
-                    end
-                    imgui.SetCursorPosX(x/2 - imgui.CalcTextSize(u8'Нет сообщения для отправки!').x/2)
-                    if #str(buff.text.dep_text) == 0 then imgui.TextColored(imgui.ImVec4(1, 0, 0, 1), u8'Нет сообщения для отправки!') end
-
-                    imgui.Separator()
-                    imgui.SetCursorPosX(x/2 - imgui.CalcTextSize(u8"Текст при отправке:").x/2)
-                    imgui.Text(u8"Текст при отправке:")
-                    imgui.TextWrapped(send_text)
-                    imgui.Separator()
-                end
-                
-                imgui.SetCursorPosX(x/2 - imgui.CalcTextSize(u8"Лог сообщений:").x/2)
-                imgui.Text(u8"Лог сообщений:")
-                imgui.BeginChild('dep_message_log', imgui.ImVec2(-1, -1), true)
-                    local org_logs = {}
-                    for _, org in ipairs(dep) do
-                        if org.tag == u8:decode(listen_org.tag) then
-                            org_logs = org.log
-                        end
-                    end
-                    local send_log = ''
-                    for i = #org_logs, 1, -1 do send_log = send_log..u8(org_logs[i]).."\n---------\n" end
-                    imgui.TextWrapped(send_log)
-                imgui.EndChild()
-            elseif page == 6 then       -- | Chat Commands
-                local text =  
-[[
-Авто-поиск игрока:
-Включение: /afind [id]
-Выключение: /afind | /afind [last_id]
-
-Пробив организации игрока:
-Включение: /org [id]
-
-Умная выдача розыска:
-Включение: /asu [id]
-
-Умный demoute | dismiss | gwarn:
-Включение: /dm [id]
-]]
-
-                imgui.Text(u8(text))
             elseif page == 99 then      -- | Update history
                 local versions = updateinfo.versions
                 for _, version in ipairs(versions) do
                     imgui.SetCursorPosX(x/2 - imgui.CalcTextSize(u8"Версия: "..version.num).x/2)
-                    imgui.Text(u8"Версия: "..version.num)
+                    
+                    if version.num == updateinfo.latest then
+                        imgui.TextColored(imgui.ImVec4(0, 1, 0, 1), u8"Версия: "..version.num)
+                        if thisScript().version == updateinfo.latest then imgui.TextHovered(u8"Текущая и актуальная установленная версия скрипта.")
+                        else                                              imgui.TextHovered(u8"Актуальная версия скрипта.") end
+                    elseif thisScript().version == version.num then
+                        imgui.TextColored(imgui.ImVec4(1, 0, 0, 1), u8"Версия: "..version.num)
+                        imgui.TextHovered(u8"Текущая установленная версия скрипта.")
+                    else imgui.Text(u8"Версия: "..version.num) end
                     imgui.Separator()
                     for _, line in ipairs(version.info) do
                         imgui.TextWrapped(line..'\n')
@@ -1294,6 +1669,13 @@ local aw = imgui.OnFrame(function() return buff.window.asu[0] end, function(play
             end
         end
         
+        if #generate_buttons == 0 and #str(buff.text.find_asu) == 0 then
+            imgui.SetCursorPos(imgui.ImVec2(x/2 - imgui.CalcTextSize(u8"Пока что тут пусто...").x/2, y/2 - imgui.CalcTextSize(u8"Настройте в меню /fbi").y/2-10))
+            imgui.Text(u8"Пока что тут пусто...")
+            imgui.SetCursorPos(imgui.ImVec2(x/2 - imgui.CalcTextSize(u8"Что бы добавить разделы - используйте [/fbi]").x/2, y/2 - imgui.CalcTextSize(u8"Настройте в меню /fbi").y/2+10))
+            imgui.Text(u8"Что бы добавить разделы - используйте [/fbi]")
+        end
+
         for name, data in pairs(generate_buttons) do
             if imgui.CollapsingHeader(name) then
                 for i, chapter in ipairs(data) do
@@ -1354,6 +1736,13 @@ local dw = imgui.OnFrame(function() return buff.window.dm[0] end, function(playe
             end
         end
         
+        if #generate_buttons == 0 and #str(buff.text.find_dm) == 0 then
+            imgui.SetCursorPos(imgui.ImVec2(x/2 - imgui.CalcTextSize(u8"Пока что тут пусто...").x/2, y/2 - imgui.CalcTextSize(u8"Настройте в меню /fbi").y/2-10))
+            imgui.Text(u8"Пока что тут пусто...")
+            imgui.SetCursorPos(imgui.ImVec2(x/2 - imgui.CalcTextSize(u8"Что бы добавить разделы - используйте [/fbi]").x/2, y/2 - imgui.CalcTextSize(u8"Настройте в меню /fbi").y/2+10))
+            imgui.Text(u8"Что бы добавить разделы - используйте [/fbi]")
+        end
+
         for name, data in pairs(generate_buttons) do
             if imgui.CollapsingHeader(name) then
                 for i, chapter in ipairs(data) do
@@ -1410,7 +1799,6 @@ end)
 
 local uw = imgui.OnFrame(function() return buff.window.update[0] end, function(player)
     player.HideCursor = false
-    local max_y = sh*0.7
 
     imgui.SetNextWindowPos(imgui.ImVec2(sw / 2, sh / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
     imgui.SetNextWindowSize(imgui.ImVec2(sw*0.3, -1), imgui.Cond.Always)
@@ -1455,6 +1843,49 @@ local uw = imgui.OnFrame(function() return buff.window.update[0] end, function(p
             end
     imgui.End()
 
+end)
+
+local depw = imgui.OnFrame(function() return buff.window.dep[0] end, function(player)
+    player.HideCursor = false
+    local articles = settings.dep.articles
+
+    imgui.SetNextWindowPos(imgui.ImVec2(sw / 2, sh / 2.5), imgui.Cond.Always, imgui.ImVec2(0.5, 0.5))
+    if #articles == 0 then imgui.SetNextWindowSize(imgui.ImVec2(450, 300), imgui.Cond.Always)
+    else                   imgui.SetNextWindowSize(imgui.ImVec2(0, 0)) end
+    imgui.Begin('FBI Helper ##dep', buff.window.dep, imgui.WindowFlags.NoResize + imgui.WindowFlags.NoCollapse)
+        local x, y = imgui.GetWindowWidth(), imgui.GetWindowHeight()
+
+        if #articles == 0 then
+            imgui.SetCursorPos(imgui.ImVec2(x/2 - imgui.CalcTextSize(u8"Пока что тут пусто...").x/2, y/2 - imgui.CalcTextSize(u8"Настройте в меню /fbi").y/2-10))
+            imgui.Text(u8"Пока что тут пусто...")
+            imgui.SetCursorPos(imgui.ImVec2(x/2 - imgui.CalcTextSize(u8"Что бы добавить разделы - используйте [/fbi]").x/2, y/2 - imgui.CalcTextSize(u8"Настройте в меню /fbi").y/2+10))
+            imgui.Text(u8"Что бы добавить разделы - используйте [/fbi]")
+        end
+
+        if not dep_selected_article then
+            DrawCenteredButtons(
+                settings.dep.articles,
+                function(article) return article.name end,
+                150, 100, 5,
+                function(article) dep_selected_article = article end
+            )
+        else
+            imgui.SetCursorPosX(imgui.GetWindowWidth()/2 - imgui.CalcTextSize('< < < < < < < < < < < <').x/2)
+            if imgui.Button('< < < < < < < < < < < <', imgui.ImVec2(0, 0)) then dep_selected_article = nil return end
+            imgui.Separator()
+            DrawCenteredButtons(
+                dep_selected_article.chapters,
+                function(chapter) return chapter.btn_text end,
+                150, 100, 5,
+                function(chapter)
+                    sampSendChat('/d '..u8:decode(chapter.text))
+                    dep_selected_article = nil
+                    buff.window.dep[0] = not buff.window.dep[0]
+                end
+            )
+        end
+
+    imgui.End()
 end)
 
 --======================================== Упрощенные mimgui функции ========================================--
