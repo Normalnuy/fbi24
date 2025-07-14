@@ -2,7 +2,7 @@
 
 script_name("FBI Helper")
 script_author("Joe Davidson")
-script_version("0.1.2")
+script_version("0.1.3")
 script_description('Multifunctional FBI helper for Arizona Wednesday')
 
 -- Основные подключения
@@ -243,7 +243,7 @@ local buff = {
 
 --=================================== TODO лист =============================================================--
 
--- 1. Поменять версию скрипта на 0.1.3 перед публикацией
+-- 
 
 --=================================== ПРОГРАММА =============================================================--
 function main()
