@@ -1,7 +1,13 @@
 {
-  "latest": "0.1.3",
+  "latest": "0.1.4",
   "updateurl": "https://github.com/Normalnuy/fbi24/raw/refs/heads/main/fbi24.lua",
   "versions": [
+    {
+      "num": "0.1.4",
+      "info": [
+        "1. Хот-фикс."
+      ]
+    },
     {
       "num": "0.1.3",
       "info": [
